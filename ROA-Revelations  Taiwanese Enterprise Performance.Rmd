@@ -1,0 +1,415 @@
+---
+title: "From Operations to Outcomes: The ROA Story of Taiwanese Enterprises"
+author: "Krish Sanjay Bhalala"
+date: "20 November, 2024"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+
+## Introduction:
+This project investigates the financial performance of Taiwanese companies listed on the Taiwan Stock Exchange from 1999 to 2009. Our focus is on understanding how specific financial indicators influence a company's profitability, particularly its Return on Assets (ROA) before interest and after taxes. By examining this relationship, we aim to provide valuable insights for investors, managers, and financial analysts interested in Taiwanese corporate performance for their corporate investments (i.e ROA).
+
+The response variable we seek to model is **Return on Assets (ROA) before interest and after tax**. ROA is a crucial metric that indicates how efficiently a company utilizes its assets to generate profits. It provides a clear picture of overall financial health and management effectiveness, making it an ideal measure of a company's performance.
+
+We propose two explanatory variables for our model: Operating Profit Rate and Non-industry income and expenditure revenue. 
+
+**The Operating Profit Rate** reflects core profitability, with a higher rate indicating more efficient asset utilization. We expect a positive relationship between this variable and ROA, as companies with efficient operations are likely to achieve higher returns. 
+
+The second variable, **Non-industry income and expenditure revenue**, captures performance outside core business activities. While significant non-industry income might boost overall profitability and ROA, excessive reliance on it could indicate potential issues with the main business model. By combining these two variables, we aim to provide a comprehensive view of factors influencing ROA. The Operating Profit Rate offers insight into operational efficiency, while Non-industry income accounts for additional profitability sources. Together, they should yield a nuanced prediction of a company's ability to generate returns from its assets.
+
+## Data Set:
+
+```{r}
+data <- read.csv("data.csv")
+ 
+set.seed(92)
+# Select the first 50 rows
+data <- data[sample(1:nrow(data), 50), ]
+ 
+# Select the specific columns
+selected_columns <- c("ROA.A..before.interest.and...after.tax",
+                     "Operating.Profit.Rate",
+                     "Non.industry.income.and.expenditure.revenue")
+data <- data[selected_columns]
+ 
+# Rename columns for easier access
+colnames(data) <- c("ROA_Before_Interest_After_Tax", "Operating_Profit_Rate",
+                   "Non_Industry_Income_Expenditure")
+ 
+data[,2] <- data[,2] + runif(42, -0.0005, 0.0005)
+
+# Display the first few rows of the dataset
+
+# Check if packages are installed, if not, install them
+if (!requireNamespace("knitr", quietly = TRUE)) install.packages("knitr")
+if (!requireNamespace("kableExtra", quietly = TRUE)) install.packages("kableExtra")
+
+library(knitr)
+library(kableExtra)
+
+kable(data,
+      col.names = c("ROA Before Interest & After Tax", 
+                    "Operating Profit Rate", 
+                    "Non-Industry Income & Expenditure"),
+      align = c('r', 'r', 'r'),
+      caption = "Financial Metrics (First 50 Rows)",
+      digits = 7) |>
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE) |>
+  column_spec(1, border_right = TRUE) |>
+  column_spec(2, border_right = TRUE) |>
+  column_spec(3, border_right = TRUE)
+```
+The Taiwanese Bankruptcy Prediction dataset, donated to UC Irvine Machine Learning Repository on 6/27/2020, contains financial data from 6,819 companies listed on the Taiwan Stock Exchange between 1999 and 2009. The dataset includes 95 financial variables and does not have any missing values. But for this project we will use 3 financial variables only in order to predict one from other 2
+
+**MLA Citation:**
+
+Taiwanese Bankruptcy Prediction [Dataset]. (2020). UCI Machine Learning Repository.
+https://doi.org/10.24432/C5004D.
+
+**Response Variable** 
+
+- **ROA (Y): Return on Assets before interest and after tax**, *expressed as a percentage $(\%)$*. Specifically, ROA is calculated by dividing a company's net income (before interest and after tax) by its total assets. It represents the percentage of profit a company generates relative to its total assets, indicating how effectively the company uses its assets to produce earnings. 
+
+**Explainatory variable**
+
+- **Operating Profit Rate $(X_1)$:** This is the ratio of operating income to net sales, *expressed as a percentage $(\%)$*. It measures the profitability of a company's core business operations, excluding the effects of investments, taxes, and interest expenses.In other words, how much profit a company makes on each dollar of sales from its main business activities, before accounting for non-operating expenses. A higher operating profit rate suggests more efficient operations and stronger pricing power.
+
+- **Non-industry income and expenditure revenue $(X_2)$:** This represents the monetary value of revenue or expenses not directly related to the company's main business activities, *measured in New Taiwan Dollars ($NT\$$)* like Interest income from investments, Gains or losses from foreign exchange transactions, etc
+
+Now lets first fit the simple linear model for ROA (Y) Return on Assets before interest and after tax and Operating Profit Rate $(X_1)$
+```{r}
+# Load necessary library
+library(ggplot2)
+
+# Fit linear model Return on Asset ~ Operating profit rate
+ROA_OPR.lm <- lm(ROA_Before_Interest_After_Tax ~ Operating_Profit_Rate,
+               data = data)
+
+# Create a custom theme for consistent styling
+custom_theme <- theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 13, face = "bold"),
+    axis.title.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    axis.text = element_text(size = 8),
+    panel.grid.major = element_line(color = "lightgray"),
+    panel.grid.minor = element_blank()
+  )
+
+# Create scatterplot for ROA vs Operating Profit Rate
+plot1 <- ggplot(data, aes(x = Operating_Profit_Rate,
+                          y = ROA_Before_Interest_After_Tax)) +
+  geom_point(color = "royalblue", size = 3, shape = 19) +
+  geom_smooth(method = "lm", color = "darkred", se = FALSE) +
+  labs(title = "Return On Asset (ROA) vs Operating Profit Rate",
+       x = "Operating Profit Rate (in %)",
+       y = "Return On Asset (Before Interest and After Tax) (in %)") +
+  custom_theme
+
+# Display the first model
+plot1
+
+# Calculate r-squared values
+summary(ROA_OPR.lm)$r.squared
+```
+
+The $r^2$ value for ROA vs Operating Profit Rate is 0.16, indicating a weaker relationship.
+
+Now we will fit the simple linear model for ROA (Y) Return on Assets before interest and after tax and Non Industry Income Expenditure $(X_2)$
+```{r}
+# Fit linear model Return on Asset ~ Non Industry Income Expenditure
+ROA_NIIE.lm <- lm(ROA_Before_Interest_After_Tax ~ Non_Industry_Income_Expenditure,
+               data = data)
+
+# Create scatterplot for ROA vs Non-industry Income/Expenditure
+plot2 <- ggplot(data, aes(x = Non_Industry_Income_Expenditure,
+                          y = ROA_Before_Interest_After_Tax)) +
+  geom_point(color = "darkgreen", size = 3, shape = 19) +
+  geom_smooth(method = "lm", color = "darkred", se = FALSE) +
+  labs(title = "Return On Asset vs Non-industry Income/Expenditure",
+       x = "Non-industry Income/Expenditure (in NTD)",
+       y = "Return On Asset Before Interest and After Tax (in %)") +
+  custom_theme
+
+# Display the second plot
+plot2
+
+summary(ROA_NIIE.lm)$r.squared
+```
+
+
+
+
+The $r^2$ value for ROA vs Non-industry income and expenditure revenue is 0.25, suggesting a weaker but still slightly better relationship than previous model.
+
+
+## Preliminary Model:
+
+### Model for ROA and Operating Profit Rate
+
+We will first fit a simple linear regression model with Return on Assets (ROA) as the response variable and Operating Profit Rate as the predictor variable. 
+
+```{r}
+summary(ROA_OPR.lm)
+```
+The adjusted R-squared ($R^2_{adj}$) for this Operating Profit Rate model is 0.14
+
+The resulting regression equation for our simple regression model Return on Asset before Tax and Interest $\sim$ Operating Profit Rate is:
+
+$$\hat{\text{ROA}} = - 56.78  + 57.40 \cdot \text{Operating Profit Rate}$$
+
+### Model for ROA and Non-industry Income and Expenditure
+
+Next, we will fit a simple linear regression model with ROA as the response variable and Non-industry Income and Expenditure as the predictor variable. 
+
+```{r}
+summary(ROA_NIIE.lm)
+```
+The adjusted R-squared ($R^2_{adj}$) for this Non-industry Income and Expenditure model is 0.24
+
+The resulting regression equation for our simple regression model Return on Asset before Tax and Interest $\sim$ Non-industry Income and Expenditure is:
+
+$$\hat{\text{ROA}} = - 5.20 + 18.97 \cdot \text{Non-industry Income and Expenditure}$$
+
+### Combined Model for ROA
+
+We will fit a multiple linear regression model incorporating both Operating Profit Rate and Non-industry Income and Expenditure as predictors for ROA. 
+
+```{r}
+ROA_combined.lm <- lm(ROA_Before_Interest_After_Tax ~ Operating_Profit_Rate +
+                      Non_Industry_Income_Expenditure, data = data)
+summary(ROA_combined.lm)
+```
+
+The resulting regression equation for our simple regression model Return on Asset before Tax and Interest $\sim$ Operating Profit Rate + Non-industry Income and Expenditure is:
+
+$$\hat{\text{ROA}} = -55.84 + 51.06 \cdot \text{Operating Profit Rate} + 17.74 \cdot \text{Non-industry Income and Expenditure}$$
+
+The adjusted R-squared ($R^2_{adj}$) for this combined model is 0.35, which is higher than both the ROA ~ Operating Profit Rate model (0.14) and the ROA ~ Non-industry Income and Expenditure model (0.24) by at least 0.1 units. This increase in $R^2_{adj}$ indicates that the combined model provides a better fit to the data compared to the individual models, explaining a larger proportion of the variance in ROA.
+
+
+### Full Second-Order Model
+
+Finally, we will fit a full second-order model, including quadratic terms and an interaction term to see if it is better model as compared to previous models or not
+
+```{r}
+ROA_full_model.lm <- lm(ROA_Before_Interest_After_Tax ~ 
+                   Operating_Profit_Rate + 
+                   Non_Industry_Income_Expenditure + 
+                   I(Operating_Profit_Rate^2) + 
+                   I(Non_Industry_Income_Expenditure^2) + 
+                   Operating_Profit_Rate:Non_Industry_Income_Expenditure, 
+                 data = data)
+
+summary(ROA_full_model.lm)
+```
+
+The regression equation for this model is:
+
+$$\begin{aligned}
+\hat{\text{ROA}} = -13695 &+ 20120 \cdot \text{(Operating Profit Rate)} + 23755 \cdot \text{(Non-industry Income and Expenditure)} \\
+&- 6982 \cdot \text{(Operating Profit Rate)}^2 - 5934 \cdot \text{(Non-industry Income and Expenditure)}^2\\
+&- 20116 \cdot \text{(Operating Profit Rate}\times\text{Non-industry Income and Expenditure)} \\
+\end{aligned}$$
+
+The adjusted R-squared ($R^2_{adj}$) for this Full Second Order model mentioned above is 0.43, which is slightly improved from the Combined Model (with $R^2_{adj} = 0.35$) but not too much. So we will need to refine our full model by removing less significant terms. 
+
+### ANOVA Test
+
+But lets first performed an Analysis of Variance (ANOVA) test to determine if at least one of the model terms in the full second-order model is statistically significant. 
+
+```{r}
+summary(ROA_full_model.lm)
+```
+
+1. LEVEL OF SIGNIFICANCE: $\alpha = 0.05$
+
+2. HYPOTHESES:
+
+- $H_0: \beta_1 = \beta_2 = \beta_3 = \beta_4 = \beta_5 = 0$
+
+- $H_a: \text{At least one } \beta_i \neq 0 \text{ for } i = 1, 2, 3, 4, 5$
+
+3. DECISION RULE: Reject $H_0$ if p-value $\leq \alpha$.
+
+4. TEST STATISTIC: $F = 8.456$
+
+5. P-VALUE: $1.138 \times 10^{5} \approx 0$
+
+6. CONCLUSION: Reject $H_0$. Conclude there is strong evidence that at least one of the coefficients of (Operating Profit Rate, Non-Industry Income and Expenditure, (Operating Profit Rate)$^2$, (Non-Industry Income and Expenditure)$^2$, Operating Profit Rate $\times$ Non-Industry Income and Expenditure) in the full second-order model is non-zero and at least of those model terms mentioned before has a significant effect on Return on Assets before interest and after tax.
+
+## Model Refinement:
+
+Now lets refine our complete second order model. We will do that by finding which terms of complete model are significant using summary()
+
+```{r}
+summary(ROA_full_model.lm)
+```
+
+Based on the summary output, the following coefficients appear to be significant:
+
+- Non Industry Income Expenditure $(p-value = 0.03 < 0.05)$
+
+- Non Industry Income Expenditure$^2\space((p-value = 0.03 < 0.05))$   
+
+Based on the significance of terms in the refined model, our proposed reduced model is:
+
+ROA Before Interest After Tax $\sim$ Non Industry Income Expenditure + Non Industry Income Expenditure$^2$
+
+```{r}
+ROA_reduced_model.lm <- lm(ROA_Before_Interest_After_Tax ~ 
+                      Non_Industry_Income_Expenditure +
+                      I(Non_Industry_Income_Expenditure^2) , 
+                    data = data)
+```
+
+Now lets perform a nested F-test to compare the full model to the above proposed reduced model to see whether it does a good job at predicting ROA before interest and after tax:
+
+```{r}
+anova(ROA_reduced_model.lm, ROA_full_model.lm)
+```
+
+Since p-value $= 0.006 < \alpha = 0.05$. There is sufficient evidence to conclude that at least one of the coefficients for Operating Profit Rate, (Operating Profit Rate)$^2$, or Operating_Profit_Rate $\times$ Non Industry Income Expenditure are non-zero. The reduced model, which excludes these terms, is not appropriate for predicting the Return on Assets before interest and after tax.
+
+This means we have removed too many terms, so we need to analyze further to add back the important term.
+
+Now, we will use the Variance Inflation Factor (VIF) function to check for multicollinearity and remove unnecessary terms from our full model. We will take out the term with the highest VIF and any terms with a VIF greater than 5 until all remaining terms have a VIF of less than 5, in other words untill all the model terms become significant.
+
+```{r}
+library(car)
+vif(ROA_full_model.lm)
+```
+Since the VIF for Operating Profit Rate$^2 = 24,173,005.2$, which is greater than 5 and the highest among all terms, we will remove it from our model and then recalculate the VIF for the remaining variables.
+
+```{r} 
+# Removing Operating_Profit_Rate^2
+ROA_reduced_model.lm <- lm(ROA_Before_Interest_After_Tax ~ 
+                   Operating_Profit_Rate + 
+                   Non_Industry_Income_Expenditure +
+                   I(Non_Industry_Income_Expenditure^2) + 
+                   Operating_Profit_Rate:Non_Industry_Income_Expenditure, 
+                 data = data)
+summary(ROA_reduced_model.lm)
+```
+Still our model terms Operating Profit Rate and Operating Profit Rate $\times$ Non Industry Income Expenditure are statistically insignificant (since pval $\approx 0 \leq \alpha = 0.05$). Consequently, we must recalculate the Variance Inflation Factor (VIF) for all model terms to evaluate multicollinearity and refine our model's predictive accuracy.
+
+```{r}
+vif(ROA_reduced_model.lm)
+```
+Since the VIF for Operating Profit Rate $\times$ Non Industry Income Expenditure = 6864975.62, which is greater than 5 and the highest among all terms, we will remove it from our model and then recalculate the VIF for the remaining variables.
+
+```{r}
+# Removing Operating_Profit_Rate:Non_Industry_Income_Expenditure 
+ROA_reduced_model.lm <- lm(ROA_Before_Interest_After_Tax ~ 
+                   Operating_Profit_Rate + 
+                   Non_Industry_Income_Expenditure +
+                   I(Non_Industry_Income_Expenditure^2), 
+                 data = data)
+summary(ROA_reduced_model.lm)
+```
+All terms in our reduced model are now significant since their p-value > 0, indicating a refined model. Our final reduced model is:
+
+ROA Before Interest After Tax $\sim$ Operating Profit Rate + Non Industry Income Expenditure + Non Industry Income Expenditure$^2$
+
+Now, we will perform a nested F-test to compare the full model with this new reduced model to see how well it predicts ROA before interest and after tax.
+
+```{r}
+# Adding back the Non_Industry_Income_Expenditure
+ROA_reduced_model.lm <- lm(ROA_Before_Interest_After_Tax ~ 
+                   Operating_Profit_Rate +
+                   Non_Industry_Income_Expenditure +
+                   I(Non_Industry_Income_Expenditure^2), 
+                 data = data)
+
+anova(ROA_reduced_model.lm, ROA_full_model.lm)
+```
+1. LEVEL OF SIGNIFICANCE: $\alpha = 0.05$
+
+2. HYPOTHESES:
+
+- $H_0: \beta_3 = \beta_5 = 0$
+
+- $H_a: \text{At least one } \beta_i \neq 0 \text{ for } i = 3, 5$
+
+3. DECISION RULE: Reject $H_0$ if p-value $\leq \alpha$
+
+4. TEST STATISTIC: $F = 1.89$
+
+5. P-VALUE: p-value $= 0.16 > \alpha = 0.05$
+
+6. CONCLUSION: Fail to Reject $H_0$ since p-value $> \alpha$. There is insufficient evidence to conclude that at least one of the coefficients for (Operating Profit Rate)$^2$, or Operating_Profit_Rate $\times$ Non Industry Income Expenditure are non-zero. The reduced model, which excludes these terms, is appropriate for predicting the Return on Assets before interest and after tax.
+
+So our final reduced model is:
+
+ROA Before Interest After Tax $\sim$ Operating Profit Rate + Non Industry Income Expenditure + Non Industry Income Expenditure $^2$
+
+## Final Model and Assessment:
+
+### ANOVA Test on Reduced Model
+
+let's perform an ANOVA test on our reduced model to determine whether it effectively predicts ROA before interest and after tax.
+
+```{r}
+summary(ROA_reduced_model.lm)
+```
+
+1. LEVEL OF SIGNIFICANCE: $\alpha = 0.05$
+
+2. HYPOTHESES:
+
+   - $H_0 : \beta_1 = \beta_2 = \beta_3 = 0$
+
+   - $H_a: \text{At least one } \beta_i \neq 0 \text{ for } i = 1, 2, 3$
+
+3. DECISION RULE: Reject $H_0$ if p-value $< \alpha$
+
+4. TEST STATISTIC: F = 12.35
+
+5. P-VALUE: p-value = $4.71 \times 10^{-6}$
+
+6. CONCLUSION: Reject $H_0$ since p-value $< \alpha$ , we conclude that the model terms (Operating Profit Rate , Non Industry Income Expenditure , Non Industry Income Expenditure$^2$) significantly explains the variation in ROA before interest and after tax.
+
+### Residual Plot and Normal Quantile Plot
+
+Now lets check whether our constant variance and normality assumptions are met appropriately or not. We will do it using the residual plot and Normality Quantile plots
+
+```{r}
+# Residual Plot
+ROA.residual <- resid(ROA_reduced_model.lm)
+ROA.fitted <- fitted.values(ROA_reduced_model.lm)
+plot(ROA.fitted, ROA.residual, ylab="Residuals", xlab="Fitted Values", main="Residual Plot")
+
+# Normal Quantile Plot
+ROA.stdresidual <- rstandard(ROA_reduced_model.lm)
+qqnorm(ROA.stdresidual, ylab="Residuals", xlab="Normal Scores", main="Normal Q-Q Plot")
+qqline(ROA.stdresidual)
+```
+
+Based on the residual plot, the points appear to be randomly scattered around the horizontal line, suggesting that the **linearity** and **constant variance** assumptions are reasonably met. There are no clear patterns or funneling effects that would indicate serious violations of these assumptions.
+
+The normal Q-Q plot shows that most points follow the diagonal line closely, particularly in the middle range. There are deviations at the extreme ends, which is not uncommon in real-world data. Overall, the **normality** assumption seems to be adequately met.
+
+While there are no extreme deviations from our assumptions, the slight departures at the tails of the normal Q-Q plot suggest we should use the model with some caution, particularly when making predictions for extreme values of ROA. However, for most practical purposes within the observed range of our data, the model appears to satisfy the key assumptions of linear regression.
+
+The **randomness** assumption is satisfied because we randomly selected 50 companies from a total of 6,819 listed on the Taiwanese Stock Exchange between 1999 and 2009, ensuring that every company had an equal chance of being included. The **independence** assumption is also met, as each company operates independently with its own unique assets, expenditures, and liabilities, meaning that the performance of one company does not affect another. Hence, these assumptions support the validity of our multiple linear regression analysis.
+
+## Conclusion:
+
+Our analysis of Taiwanese companies listed on the Taiwan Stock Exchange from 1999 to 2009 demonstrates that Operating Profit Rate is a significant predictor of Return on Assets (ROA), meaning that as a company's operating efficiency improves, so does its profitability relative to its assets. Additionally, Non-industry Income and Expenditure initially boosts ROA but starts to negatively impact it at higher levels. Overall, this model highlights the importance of managing core business operations effectively while being cautious about the effects of non-operating income. Overall the final model explains approximately 44.62% of the variation in ROA, indicating good predictive power as compared to indivual contributing parameters.
+
+Hence our best estimate of the relationship between ROA (Y), Operating Profit Rate ($X_1$), and Non-industry income and expenditure revenue ($X_2$) is:
+
+$$
+\begin{aligned}
+\hat{\text{ROA before interest and after tax}} = &-615.8  + 50.5 \cdot \text{Operating Profit Rate} \\
+                       &+ 3674.2 \cdot \text{Non-industry Income and Expenditure} \\
+                       &- 5962 \cdot \text{Non-industry Income and Expenditure}^2
+\end{aligned}
+$$
+
+This model provides valuable insights for investors and managers in assessing and predicting the financial performance of Taiwanese companies, it suggests that a company's main business operations and some non-core activities can help boost Return on Assets before interset and after taxes (i.e profits on investments), but there's a sweet spot for non-core expenditures - too much can be harmful, emphasizing the critical importance of efficient core operations in driving overall profitability, while also considering the significant effect of non-core financial activities.
