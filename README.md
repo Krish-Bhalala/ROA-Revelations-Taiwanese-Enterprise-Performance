@@ -46,10 +46,8 @@ This research investigates the financial performance of Taiwanese companies list
 3. Run analysis scripts
 4. Explore findings in the project report
 
-## Contributions
-
-Contributions and suggestions are welcome. Please open an issue or submit a pull request.
-
 ## License
 
-MIT License
+#### Educational Project License
+
+This repository contains an excerpt of academic assignment shared solely for professional portfolio demonstration and is not to be used as a reference or submission for academic coursework. Any reproduction, copying, or use of this code for educational assignments is strictly prohibited and may constitute academic misconduct.
